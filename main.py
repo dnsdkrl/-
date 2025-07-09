@@ -1,14 +1,17 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import time
 import plotly.graph_objects as go
+from streamlit_autorefresh import st_autorefresh
 
+# ----------------------
+# AI 공부 계획 앱 타이틀
+# ----------------------
 st.title("AI 기반 효율적 공부 계획 앱 + 뽀모도로 타이머 + 피드백")
 
-# ---------------------
+# ----------------------
 # 공부 계획 입력 받기
-# ---------------------
+# ----------------------
 st.header("공부 계획 설정")
 goal = st.text_input("공부 목표를 입력하세요 (예: 자격증 합격, 토익 점수 향상 등)")
 subjects_input = st.text_area("공부할 과목을 쉼표(,)로 구분하여 입력하세요 (예: 수학, 영어, 과학)")
@@ -33,9 +36,9 @@ if st.button("공부 계획 생성하기"):
         })
         st.session_state['df_plan'] = df_plan
 
-# ---------------------
+# ----------------------
 # 공부 시간 기록 & 시각화
-# ---------------------
+# ----------------------
 if 'df_plan' in st.session_state:
     st.header("공부 시간 기록하기")
     df_plan = st.session_state['df_plan']
@@ -59,9 +62,9 @@ if 'df_plan' in st.session_state:
     ax.legend()
     st.pyplot(fig)
 
-    # ---------------------
+    # ----------------------
     # 피드백
-    # ---------------------
+    # ----------------------
     st.header("오늘의 피드백")
     feedbacks = []
     for _, row in df_plan.iterrows():
@@ -78,9 +81,9 @@ if 'df_plan' in st.session_state:
     satisfaction = st.slider("오늘 공부 만족도는 어땠나요?", 1, 5, 3)
     st.write(f"만족도 점수: {satisfaction}/5")
 
-# ---------------------
-# 뽀모도로 스타일 타이머
-# ---------------------
+# ----------------------
+# 뽀모도로 스타일 타이머 (자동 새로고침 방식)
+# ----------------------
 def draw_timer(remaining_sec, total_sec):
     percent = remaining_sec / total_sec if total_sec else 0
     fig = go.Figure(go.Pie(
@@ -101,38 +104,33 @@ def draw_timer(remaining_sec, total_sec):
 if 'timer_running' not in st.session_state:
     st.session_state.timer_running = False
 if 'remaining_sec' not in st.session_state:
-    st.session_state.remaining_sec = 25 * 60  # 기본 25분
+    st.session_state.remaining_sec = 25 * 60
 if 'total_sec' not in st.session_state:
     st.session_state.total_sec = st.session_state.remaining_sec
 
-def start_timer():
-    st.session_state.timer_running = True
-def pause_timer():
-    st.session_state.timer_running = False
-def stop_timer():
-    st.session_state.timer_running = False
-    st.session_state.remaining_sec = st.session_state.total_sec
+# 1초마다 페이지 자동 새로고침
+timer_count = st_autorefresh(interval=1000, limit=None, key="timer_autorefresh")
 
 st.header("뽀모도로 스타일 타이머")
-timer_col1, timer_col2, timer_col3 = st.columns(3)
-with timer_col1:
+
+col1, col2, col3 = st.columns(3)
+with col1:
     if st.button("시작"):
-        start_timer()
-with timer_col2:
+        st.session_state.timer_running = True
+with col2:
     if st.button("일시정지"):
-        pause_timer()
-with timer_col3:
+        st.session_state.timer_running = False
+with col3:
     if st.button("종료"):
-        stop_timer()
+        st.session_state.timer_running = False
+        st.session_state.remaining_sec = st.session_state.total_sec
 
 if st.session_state.timer_running and st.session_state.remaining_sec > 0:
-    draw_timer(st.session_state.remaining_sec, st.session_state.total_sec)
-    time.sleep(1)
     st.session_state.remaining_sec -= 1
-    st.experimental_rerun()
-elif st.session_state.remaining_sec == 0:
-    draw_timer(0, st.session_state.total_sec)
+
+draw_timer(st.session_state.remaining_sec, st.session_state.total_sec)
+
+if st.session_state.remaining_sec == 0 and st.session_state.timer_running:
+    st.session_state.timer_running = False
     st.balloons()
     st.success("시간 종료! 수고하셨어요!")
-else:
-    draw_timer(st.session_state.remaining_sec, st.session_state.total_sec)
