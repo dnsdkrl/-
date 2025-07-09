@@ -6,6 +6,7 @@ import time
 
 st.title("AI 기반 효율적 공부 계획 앱")
 
+
 # 1. 사용자 입력
 st.header("공부 계획 설정")
 goal = st.text_input("공부 목표를 입력하세요 (예: 자격증 합격, 토익 점수 향상 등)")
